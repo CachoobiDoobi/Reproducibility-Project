@@ -114,7 +114,8 @@ class norm:
         x2 = [min(x1[0] + width, self.imsize[0]), min(x1[1] + height, self.imsize[1])]
         im = self.im[int(x1[1]):int(x2[1]), int(x1[0]):int(x2[0])]
         im = cv2.resize(im, (60, 36))
-        return im
+        #we also need to return the coordinates
+        return im, [int(x) for x in x1], [int(x) for x in x2]
 
     def CropEyeWithCenter(self, center):
         try:

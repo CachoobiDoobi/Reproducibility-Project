@@ -49,7 +49,7 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
 
     # Create the handle of label 
     outfile = open(label_outpath, 'w')
-    outfile.write("Face Left Right Origin WhichEye 3DGaze 3DHead 2DGaze 2DHead Rmat Smat GazeOrigin\n")
+    outfile.write("Face Left Right Origin WhichEye 3DGaze 3DHead 2DGaze 2DHead Rmat Smat GazeOrigin Rects\n")
     if not os.path.exists(os.path.join(im_outpath, "face")):
         os.makedirs(os.path.join(im_outpath, "face"))
     if not os.path.exists(os.path.join(im_outpath, "left")):
@@ -80,6 +80,8 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         # Read image annotation and image
         im_path = os.path.join(im_root, day, im_name)
         im = cv2.imread(im_path)
+        # cv2.imshow('image',im)
+        # cv2.waitKey(0)
         annotation = anno_dict[im_info]
         annotation = AnnoDecode(annotation)
         origin = annotation["facecenter"]
@@ -92,19 +94,22 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
                         camparams=camera)
 
         im_face = norm.GetImage(im)
-
+        # cv2.imshow('image',im_face)
+        # cv2.waitKey(0)
         # Crop left eye images
         llc = norm.GetNewPos(annotation["left_left_corner"])
         lrc = norm.GetNewPos(annotation["left_right_corner"])
-        im_left = norm.CropEye(llc, lrc)
+        im_left,x1,x2 = norm.CropEye(llc, lrc)
         im_left = dpc.EqualizeHist(im_left)
-
+        # cv2.imshow('image',im_left)
+        # cv2.waitKey(0)
         # Crop Right eye images
         rlc = norm.GetNewPos(annotation["right_left_corner"])
         rrc = norm.GetNewPos(annotation["right_right_corner"])
-        im_right = norm.CropEye(rlc, rrc)
+        im_right,x3,x4 = norm.CropEye(rlc, rrc)
         im_right = dpc.EqualizeHist(im_right)
-
+        # cv2.imshow('image',im_right)
+        # cv2.waitKey(0)
         # Acquire essential info
         gaze = norm.GetGaze(scale=scale)
         head = norm.GetHeadRot(vector=True)
@@ -148,10 +153,12 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         save_rvec = ",".join(rvec.astype("str"))
         save_svec = ",".join(svec.astype("str"))
         origin = ",".join(origin.astype("str"))
-
+        # rects = ",".join([str(x1[0]),str(x2[0]),str(x1[1] - x1[0]),str(x2[1] - x2[0]),str(x3[0]),str(x4[0]),str(x3[1] - x3[0]),str(x4[1] - x4[0])])
+        rects = ",".join([str(x1[0]),str(x1[1]),str(x2[0]-x1[0]),str(x2[1]-x1[1]),str(x3[0]),str(x3[1]),str(x4[0]-x3[0]),str(x4[1]-x3[1])])
+        print(rects)
         save_str = " ".join(
             [save_name_face, save_name_left, save_name_right, save_origin, save_flag, save_gaze, save_head, save_gaze2d,
-             save_head2d, save_rvec, save_svec, origin])
+             save_head2d, save_rvec, save_svec, origin, rects])
 
         outfile.write(save_str + "\n")
     print("")
