@@ -76,8 +76,8 @@ class loader(Dataset):
 
     def __getitem__(self, idx):
         # this is no longer accurate
-        #   0        1      2     3       4        5     6       7      8     9    10       11
-        # Face      Left  Right Origin WhichEye 3DGaze 3DHead 2DGaze 2DHead Rmat Smat GazeOrigin
+        #   0     1     2      3         4       5      
+        # Face  Left  Right  Rects     2DGaze  Label
 
         line = self.lines[idx + 1]
 
@@ -134,8 +134,10 @@ class loader(Dataset):
         rightEye_img = rightEye_img / 255
         rightEye_img = rightEye_img.transpose(2, 0, 1)
 
-        rects = line[6]
+        rects = line[4]
         label = line[5]
+        #TODO change this
+        exlabel = line[5]
 
         print(line)
 
@@ -145,9 +147,9 @@ class loader(Dataset):
         return {"faceImg": torch.from_numpy(face_img).type(torch.FloatTensor),
                 "leftEyeImg": torch.from_numpy(leftEye_img).type(torch.FloatTensor),
                 "rightEyeImg": torch.from_numpy(rightEye_img).type(torch.FloatTensor),
-                "rects": torch.from_numpy(np.array(line[5])).type(torch.FloatTensor),
+                "rects": torch.from_numpy(np.array(rects)).type(torch.FloatTensor),
                 "label": torch.from_numpy(label).type(torch.FloatTensor),
-                "exlabel": torch.from_numpy(np.array(line[6])).type(torch.FloatTensor), "frame": line}
+                "exlabel": torch.from_numpy(np.array(exlabel)).type(torch.FloatTensor), "frame": line}
 
 
 def txtload(path, type, batch_size, shuffle=False, num_workers=0):
