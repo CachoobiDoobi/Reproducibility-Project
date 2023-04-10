@@ -14,7 +14,7 @@ scale = False
 # loading the haar case algorithm for face detection
 alg = "haarcascade_frontalface_default.xml"
 # passing the algorithm to OpenCV
-haar_cascade = cv2.CascadeClassifier(alg)
+haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + alg)
 
 def ImageProcessing_MPII():
     persons = os.listdir(sample_root)[:-1]
