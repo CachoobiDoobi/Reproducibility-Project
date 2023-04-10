@@ -1,2 +1,5 @@
-**/MPIIFaceGaze
-**/__pycache__/**
+Data/
+config.yaml
+.idea
+model
+__pycache__

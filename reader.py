@@ -134,22 +134,23 @@ class loader(Dataset):
         rightEye_img = rightEye_img / 255
         rightEye_img = rightEye_img.transpose(2, 0, 1)
 
-        rects = line[4]
-        label = line[5]
-        #TODO change this
+        rects = line[3]
+        label = line[4]
+        # TODO change this
         exlabel = line[5]
 
-        print(line)
-
+        # print(line)
+        # print(exlabel[4:])
         # what is exlabel
         # how to get rects?
 
         return {"faceImg": torch.from_numpy(face_img).type(torch.FloatTensor),
                 "leftEyeImg": torch.from_numpy(leftEye_img).type(torch.FloatTensor),
                 "rightEyeImg": torch.from_numpy(rightEye_img).type(torch.FloatTensor),
-                "rects": torch.from_numpy(np.array(rects)).type(torch.FloatTensor),
-                "label": torch.from_numpy(label).type(torch.FloatTensor),
-                "exlabel": torch.from_numpy(np.array(exlabel)).type(torch.FloatTensor), "frame": line}
+                "rects": torch.from_numpy(np.array(rects.split(",")).astype(np.float)).type(torch.FloatTensor),
+                "label": torch.from_numpy(np.array(label.split(",")).astype(np.float)).type(torch.FloatTensor),
+                "exlabel": torch.from_numpy(np.array(exlabel[4:]).astype(np.float)).type(torch.FloatTensor),
+                "frame": line}
 
 
 def txtload(path, type, batch_size, shuffle=False, num_workers=0):

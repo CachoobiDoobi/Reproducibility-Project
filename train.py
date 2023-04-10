@@ -14,7 +14,7 @@ import time
 
 if __name__ == "__main__":
     #os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
-    config = yaml.load(open("config.yaml"))
+    config = yaml.full_load(open("config.yaml"))
     config = config["train"]
     path = config["data"]["path"]
     model_name = config["save"]["model_name"]
@@ -25,7 +25,8 @@ if __name__ == "__main__":
         os.makedirs(save_path)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    print(device)
+    print("Pytorch CUDA Version is ", torch.version.cuda)
     print("Read data")
     dataset = reader.txtload(path, "train", config["params"]["batch_size"], shuffle=True,
                              num_workers=0)
