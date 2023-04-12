@@ -2,9 +2,6 @@ import numpy as np
 import scipy.io as sio
 import cv2
 import os
-import sys
-# sys.path.append("../core/")
-import data_processing_core as dpc
 
 # root = "/mnt/d/Master/Q3/Deep\ Learning/AFF-Net/AFF-Net/data/MPIIFaceGaze"
 root = "MPIIFaceGaze"
@@ -16,10 +13,11 @@ alg = "haarcascade_frontalface_default.xml"
 # passing the algorithm to OpenCV
 haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + alg)
 
+
 def ImageProcessing_MPII():
     persons = os.listdir(sample_root)[:-1]
     persons.sort()
-  
+
     for person in persons:
         sample_list = os.path.join(sample_root, person)
 
@@ -36,7 +34,6 @@ def ImageProcessing_MPII():
             os.makedirs(os.path.join(out_root, "../label"))
 
         print(f"Start Processing {person}")
-        # print(str(im_root) +" " +  str(anno_path) + " " + str(sample_list) + " " + str(im_outpath) + " " + str(label_outpath) + " " + str(person))
         ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_outpath, person)
 
 
@@ -62,18 +59,13 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         os.makedirs(os.path.join(im_outpath, "right"))
     if not os.path.exists(os.path.join(im_outpath, "rects")):
         os.makedirs(os.path.join(im_outpath, "rects"))
-    # caceu code
-    # TODO delete this line
-    days = os.listdir(sample_list)[1:-1]
 
-
-    # Image Processing 
+    # Image Processing
     with open(sample_list + "/" + person + ".txt") as infile:
         im_list = infile.readlines()
         total = len(im_list)
 
     for count, info in enumerate(im_list):
-
         progressbar = "".join(["\033[41m%s\033[0m" % '   '] * int(count / total * 20))
         progressbar = "\r" + progressbar + f" {count}|{total}"
         print(progressbar, end="", flush=True)
@@ -87,35 +79,40 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         # Read image annotation and image
         im_path = os.path.join(im_root, day, im_name)
         im = cv2.imread(im_path)
-        # cv2.imshow('image',im)
-        # cv2.waitKey(0)
+
         annotation = anno_dict[im_info]
         annotation = AnnoDecode(annotation)
         rects = []
-        
-        # Crop face images
-        im_face = im.copy()
-        c1_face, c2_face = CropFace(im)
-        rects.append([c1_face[0], c1_face[1], c2_face[0], c2_face[1]])
 
         # Crop left eye images
         llc = annotation["left_left_corner"]
         lrc = annotation["left_right_corner"]
-        im_left,(c1_left,c2_left) = CropEye(im,llc, lrc)
+        im_left, (c1_left, c2_left), sizeL = CropEye(im, llc, lrc)
         rects.append([c1_left[0], c1_left[1], c2_left[0], c2_left[1]])
 
         # Crop Right eye images
         rlc = annotation["right_left_corner"]
         rrc = annotation["right_right_corner"]
-        im_right,(c1_right,c2_right) = CropEye(im,rlc, rrc)
+        im_right, (c1_right, c2_right), sizeR = CropEye(im, rlc, rrc)
         rects.append([c1_right[0], c1_right[1], c2_right[0], c2_right[1]])
-        #Flip right eye image
+
+        # Flip right eye image
         im_right = cv2.flip(im_right, 1)
 
+        l_mouth = annotation["left_mouth_corner"]
+        r_mouth = annotation["right_mouth_corner"]
+
+        face_center = (llc + lrc + rlc + rrc) / 8.0 + (l_mouth + r_mouth) / 4.0
+
+        # Crop face images
+        im_face = im.copy()
+        im_face, (c1_face, c2_face), = CropFace(im, face_center, sizeL)
+        rects.append([c1_face[0], c1_face[1], c2_face[0], c2_face[1]])
+
         # Save rects for debugging
-        cv2.rectangle(im, (rects[0][0],rects[0][1]), (rects[0][2],rects[0][3]), (0, 255, 0), 2)
-        cv2.rectangle(im, (rects[1][0],rects[1][1]), (rects[1][2],rects[1][3]), (0, 0, 255), 2)
-        cv2.rectangle(im, (rects[2][0],rects[2][1]), (rects[2][2],rects[2][3]), (0, 0, 255), 2)
+        cv2.rectangle(im, (rects[0][0], rects[0][1]), (rects[0][2], rects[0][3]), (0, 255, 0), 2)
+        cv2.rectangle(im, (rects[1][0], rects[1][1]), (rects[1][2], rects[1][3]), (0, 0, 255), 2)
+        cv2.rectangle(im, (rects[2][0], rects[2][1]), (rects[2][2], rects[2][3]), (0, 0, 255), 2)
         cv2.imwrite(os.path.join(im_outpath, "rects", str(count + 1) + ".jpg"), im)
         # Save the acquired info
 
@@ -123,7 +120,7 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         cv2.imwrite(os.path.join(im_outpath, "left", str(count + 1) + ".jpg"), im_left)
         cv2.imwrite(os.path.join(im_outpath, "right", str(count + 1) + ".jpg"), im_right)
 
-        label = os.path.join(person, str(count + 1) )
+        label = os.path.join(person, str(count + 1))
         save_name_face = os.path.join(person, "face", str(count + 1) + ".jpg")
         save_name_left = os.path.join(person, "left", str(count + 1) + ".jpg")
         save_name_right = os.path.join(person, "right", str(count + 1) + ".jpg")
@@ -145,38 +142,57 @@ def AnnoDecode(anno_info):
     out["left_right_corner"] = annotation[4:6]
     out["right_left_corner"] = annotation[6:8]
     out["right_right_corner"] = annotation[8:10]
+    out["left_mouth_corner"] = annotation[10:12]
+    out["right_mouth_corner"] = annotation[12:14]
     out["headrotvectors"] = annotation[14:17]
     out["headtransvectors"] = annotation[17:20]
     out["facecenter"] = annotation[20:23]
     out["3d_gaze"] = annotation[23:26]
     return out
 
-def CropFace(im):
-    grayImg = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    face = haar_cascade.detectMultiScale(grayImg, 1.3, 4)
-    for (x, y, w, h) in face:
-        return [x, y], [x + w, y + h]
-    print("No face found! Bounding box equal with size of the image\n")
-    return [0, 0], [im.shape[0], im.shape[1]]
+
+def CropFace(im, face_center, size):
+    imsize = (im.shape[1], im.shape[0])
+
+    size = size * (1.0 / 0.3)
+    x1 = [max(face_center[0] - size / 2, 0), max(face_center[1] - size / 2, 0)]
+    x2 = [min(x1[0] + size, imsize[0]), min(x1[1] + size, imsize[1])]
+
+    result = im[int(x1[1]):int(x2[1]), int(x1[0]):int(x2[0])]
+    result = cv2.resize(result, (224, 224))
+
+    rects = [int(x1[0]), int(x1[1])], [int(x2[0]), int(x2[1])]
+
+    # grayImg = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    # face = haar_cascade.detectMultiScale(grayImg, 1.3, 4)
+    # for (x, y, w, h) in face:
+    #     return [x, y], [x + w, y + h]
+    # print("No face found! Bounding box equal with size of the image\n")
+    return result, rects
+
 
 def CropEye(im, lcorner, rcorner):
-        imsize=(im.shape[1], im.shape[0])
-        x, y = list(zip(lcorner, rcorner))
-        
-        center_x = np.mean(x)
-        center_y = np.mean(y)
+    imsize = (im.shape[1], im.shape[0])
+    x, y = list(zip(lcorner, rcorner))
 
-        width = np.abs(x[0] - x[1])*1.5
-        times = width/60
-        height = 36 * times
+    center_x = np.mean(x)
+    center_y = np.mean(y)
 
-        x1 = [max(center_x - width/2, 0), max(center_y - height/2, 0)]
-        x2 = [min(x1[0] + width, imsize[0]), min(x1[1] + height, imsize[1])]
-        result = im[int(x1[1]):int(x2[1]), int(x1[0]):int(x2[0])]
-        result = cv2.resize(result, (60, 36))
-        #we also need to return the rects
-        rects = [int(x1[0]),int(x1[1])] , [int(x2[0]),int(x2[1])]
-        return result, rects
+    size = np.abs(x[0] - x[1]) * 1.7
+    # times = width/60
+    # height = 36 * times
+
+    x1 = [max(center_x - size / 2, 0), max(center_y - size / 2, 0)]
+    x2 = [min(x1[0] + size, imsize[0]), min(x1[1] + size, imsize[1])]
+
+    result = im[int(x1[1]):int(x2[1]), int(x1[0]):int(x2[0])]
+    result = cv2.resize(result, (112, 112))
+
+    # we also need to return the rects
+    rects = [int(x1[0]), int(x1[1])], [int(x2[0]), int(x2[1])]
+
+    return result, rects, size
+
 
 if __name__ == "__main__":
     ImageProcessing_MPII()
