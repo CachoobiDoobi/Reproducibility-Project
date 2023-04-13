@@ -3,3 +3,5 @@ config.yaml
 .idea
 model
 __pycache__
+
+SE.log
