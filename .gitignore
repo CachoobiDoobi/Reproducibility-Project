@@ -3,5 +3,7 @@ config.yaml
 .idea
 model
 __pycache__
-
 SE.log
+out/
+label/
+MPIIFaceGaze/
