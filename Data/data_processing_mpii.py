@@ -15,13 +15,16 @@ haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + alg)
 
 
 def ImageProcessing_MPII():
-    persons = os.listdir(sample_root)[:-1]
+    persons = os.listdir(sample_root)
     persons.sort()
 
     for person in persons:
+
         sample_list = os.path.join(sample_root, person)
 
         person = person.split(".")[0]
+        if person == "readme":
+            continue
         im_root = os.path.join(root, person)
         anno_path = os.path.join(root, person, f"{person}.txt")
 
@@ -33,15 +36,24 @@ def ImageProcessing_MPII():
         if not os.path.exists(os.path.join(out_root, "../label")):
             os.makedirs(os.path.join(out_root, "../label"))
 
+        screen = os.path.join(root, person, "Calibration", "screenSize.mat")
+
         print(f"Start Processing {person}")
-        ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_outpath, person)
+        ImageProcessing_Person(im_root, anno_path, screen, sample_list, im_outpath, label_outpath, person)
 
 
-def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_outpath, person):
+def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outpath, label_outpath, person):
     # Read camera matrix
     camera = sio.loadmat(os.path.join(f"{im_root}", "Calibration", "Camera.mat"))
     camera = camera["cameraMatrix"]
 
+    infile = sio.loadmat(screen_path)
+    screen_width_p = infile['width_pixel'].flatten()[0]
+    screen_height_p = infile['height_pixel'].flatten()[0]
+    screen_width_m = infile['width_mm'].flatten()[0]
+    screen_height_m = infile['height_mm'].flatten()[0]
+    screen_width_r = screen_width_m/screen_width_p
+    screen_height_r = screen_height_m/screen_height_p
     # Read gaze annotation
     annotation = os.path.join(anno_path)
     with open(annotation) as infile:
@@ -76,61 +88,79 @@ def ImageProcessing_Person(im_root, anno_path, sample_list, im_outpath, label_ou
         day, im_name = im_info.split("/")
         im_number = int(im_name.split(".")[0])
 
-        # Read image annotation and image
+        # Read image
         im_path = os.path.join(im_root, day, im_name)
         im = cv2.imread(im_path)
+        # Get image size
+        im_height, im_width, _ = im.shape
 
         annotation = anno_dict[im_info]
         annotation = AnnoDecode(annotation)
         rects = []
-
-        # Crop left eye images
-        llc = annotation["left_left_corner"]
-        lrc = annotation["left_right_corner"]
-        im_left, (c1_left, c2_left), sizeL = CropEye(im, llc, lrc)
-        rects.append([c1_left[0], c1_left[1], c2_left[0], c2_left[1]])
-
-        # Crop Right eye images
+        # Extract information
+        gaze = annotation["2d_gaze"]
         rlc = annotation["right_left_corner"]
         rrc = annotation["right_right_corner"]
-        im_right, (c1_right, c2_right), sizeR = CropEye(im, rlc, rrc)
-        rects.append([c1_right[0], c1_right[1], c2_right[0], c2_right[1]])
-
-        # Flip right eye image
-        im_right = cv2.flip(im_right, 1)
-
+        llc = annotation["left_left_corner"]
+        lrc = annotation["left_right_corner"]
         l_mouth = annotation["left_mouth_corner"]
         r_mouth = annotation["right_mouth_corner"]
-
         face_center = (llc + lrc + rlc + rrc) / 8.0 + (l_mouth + r_mouth) / 4.0
+
+        # Normalise gaze to image coordinates from screen coordinates
+        gaze[0] = int((gaze[0]/screen_width_p)*im_width)
+        gaze[1] = int((gaze[1]/screen_height_p)*im_height)
+
+        # Crop left eye images
+        im_left, (c1_left, c2_left), sizeL = CropEye(im, llc, lrc)
+        
+        # Crop Right eye images
+        im_right, (c1_right, c2_right), sizeR = CropEye(im, rlc, rrc)
+       
+        # Flip right eye image
+        im_right = cv2.flip(im_right, 1)
 
         # Crop face images
         im_face = im.copy()
         im_face, (c1_face, c2_face), = CropFace(im, face_center, sizeL)
+
+        # Append rects in right order
         rects.append([c1_face[0], c1_face[1], c2_face[0], c2_face[1]])
+        rects.append([c1_left[0], c1_left[1], c2_left[0], c2_left[1]])
+        rects.append([c1_right[0], c1_right[1], c2_right[0], c2_right[1]])
 
-        # Save rects for debugging
+        # Draw rects for debugging
         cv2.rectangle(im, (rects[0][0], rects[0][1]), (rects[0][2], rects[0][3]), (0, 255, 0), 2)
-        cv2.rectangle(im, (rects[1][0], rects[1][1]), (rects[1][2], rects[1][3]), (0, 0, 255), 2)
-        cv2.rectangle(im, (rects[2][0], rects[2][1]), (rects[2][2], rects[2][3]), (0, 0, 255), 2)
-        cv2.imwrite(os.path.join(im_outpath, "rects", str(count + 1) + ".jpg"), im)
-        # Save the acquired info
+        cv2.rectangle(im, (rects[1][0], rects[1][1]), (rects[1][2], rects[1][3]), (255, 0, 0), 2)
+        cv2.rectangle(im, (rects[2][0], rects[2][1]), (rects[2][2], rects[2][3]), (255, 0, 0), 2)
 
+        # Draw gaze location for debugging
+        cv2.circle(im, (im_width - int((gaze[0])),int((gaze[1]))), radius=5, color=(0, 0, 255), thickness=-1)
+        cv2.imwrite(os.path.join(im_outpath, "rects", str(count + 1) + ".jpg"), im)
+
+        # Save the acquired info
         cv2.imwrite(os.path.join(im_outpath, "face", str(count + 1) + ".jpg"), im_face)
         cv2.imwrite(os.path.join(im_outpath, "left", str(count + 1) + ".jpg"), im_left)
         cv2.imwrite(os.path.join(im_outpath, "right", str(count + 1) + ".jpg"), im_right)
-
+        # Normalize Rects and Gaze
+        for rect in rects:
+            rect[0] = rect[0] / im_width
+            rect[1] = rect[1] / im_height
+            rect[2] = rect[2] / im_width
+            rect[3] = rect[3] / im_height
+        gaze[0] = gaze[0] / im_width
+        gaze[1] = gaze[1] / im_height
+        # Save the acquired info
         label = os.path.join(person, str(count + 1))
         save_name_face = os.path.join(person, "face", str(count + 1) + ".jpg")
         save_name_left = os.path.join(person, "left", str(count + 1) + ".jpg")
         save_name_right = os.path.join(person, "right", str(count + 1) + ".jpg")
         rects = ",".join(str(item) for sublist in rects for item in sublist)
-        save_gaze2d = ",".join(annotation["2d_gaze"].astype("str"))
+        save_gaze2d = ",".join(gaze.astype("str"))
         save_str = " ".join(
             [save_name_face, save_name_left, save_name_right, rects, save_gaze2d, label])
 
         outfile.write(save_str + "\n")
-    # print("")
     outfile.close()
 
 

@@ -3,3 +3,6 @@ config.yaml
 .idea
 model
 __pycache__
+out/
+label/
+MPIIFaceGaze/
