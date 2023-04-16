@@ -62,7 +62,7 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
 
     # Create the handle of label 
     outfile = open(label_outpath, 'w')
-    outfile.write("Face Left Right Rects 2DGaze Label\n")
+    outfile.write("Face Left Right Rects 2DGazeNorm Label 2DGazeScreen\n")
     if not os.path.exists(os.path.join(im_outpath, "face")):
         os.makedirs(os.path.join(im_outpath, "face"))
     if not os.path.exists(os.path.join(im_outpath, "left")):
@@ -98,7 +98,7 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
         annotation = AnnoDecode(annotation)
         rects = []
         # Extract information
-        gaze = annotation["2d_gaze"]
+        gaze = annotation["2d_gaze"].copy()
         rlc = annotation["right_left_corner"]
         rrc = annotation["right_right_corner"]
         llc = annotation["left_left_corner"]
@@ -156,9 +156,10 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
         save_name_left = os.path.join(person, "left", str(count + 1) + ".jpg")
         save_name_right = os.path.join(person, "right", str(count + 1) + ".jpg")
         rects = ",".join(str(item) for sublist in rects for item in sublist)
-        save_gaze2d = ",".join(gaze.astype("str"))
+        save_gaze2d_norm = ",".join(gaze.astype("str"))
+        save_gaze2d_screen = ",".join(annotation["2d_gaze"].astype("int").astype("str"))
         save_str = " ".join(
-            [save_name_face, save_name_left, save_name_right, rects, save_gaze2d, label])
+            [save_name_face, save_name_left, save_name_right, rects, save_gaze2d_norm, label, save_gaze2d_screen])
 
         outfile.write(save_str + "\n")
     outfile.close()
