@@ -98,7 +98,7 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
         annotation = AnnoDecode(annotation)
         rects = []
         # Extract information
-        gaze = annotation["2d_gaze"]
+        gaze = annotation["2d_gaze"].copy()
         rlc = annotation["right_left_corner"]
         rrc = annotation["right_right_corner"]
         llc = annotation["left_left_corner"]
