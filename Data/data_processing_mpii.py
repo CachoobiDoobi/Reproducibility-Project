@@ -62,7 +62,7 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
 
     # Create the handle of label 
     outfile = open(label_outpath, 'w')
-    outfile.write("Face Left Right Rects 2DGaze Label\n")
+    #outfile.write("Face Left Right Rects 2DGaze Label\n")
     if not os.path.exists(os.path.join(im_outpath, "face")):
         os.makedirs(os.path.join(im_outpath, "face"))
     if not os.path.exists(os.path.join(im_outpath, "left")):
@@ -110,6 +110,9 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
         # Normalise gaze to image coordinates from screen coordinates
         gaze[0] = int((gaze[0]/screen_width_p)*im_width)
         gaze[1] = int((gaze[1]/screen_height_p)*im_height)
+        # print("screen:", screen_width_m, screen_height_m)
+        # print("pixel:", screen_width_p, screen_height_p)
+        # print("img:", im_width, im_height)
 
         # Crop left eye images
         im_left, (c1_left, c2_left), sizeL = CropEye(im, llc, lrc)
@@ -157,8 +160,10 @@ def ImageProcessing_Person(im_root, anno_path, screen_path, sample_list, im_outp
         save_name_right = os.path.join(person, "right", str(count + 1) + ".jpg")
         rects = ",".join(str(item) for sublist in rects for item in sublist)
         save_gaze2d = ",".join(gaze.astype("str"))
+        sizes_mm = [screen_width_m, screen_height_m]
+        screen_size_mm = ",".join(str(s) for s in sizes_mm)
         save_str = " ".join(
-            [save_name_face, save_name_left, save_name_right, rects, save_gaze2d, label])
+            [save_name_face, save_name_left, save_name_right, rects, save_gaze2d, label, screen_size_mm])
 
         outfile.write(save_str + "\n")
     outfile.close()

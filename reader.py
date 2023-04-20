@@ -79,7 +79,7 @@ class loader(Dataset):
         #   0     1     2      3         4       5      
         # Face  Left  Right  Rects     2DGaze  Label
 
-        line = self.lines[idx + 1]
+        line = self.lines[idx]
 
         line = line.split(" ")
 
@@ -138,6 +138,7 @@ class loader(Dataset):
         label = line[4]
         # TODO change this
         exlabel = line[5]
+        screen_size = line[6]
 
         # print(line)
         # print(exlabel[4:])
@@ -150,6 +151,7 @@ class loader(Dataset):
                 "rects": torch.from_numpy(np.array(rects.split(",")).astype(np.float)).type(torch.FloatTensor),
                 "label": torch.from_numpy(np.array(label.split(",")).astype(np.float)).type(torch.FloatTensor),
                 "exlabel": torch.from_numpy(np.array(exlabel[4:]).astype(np.float)).type(torch.FloatTensor),
+                "screen_size": np.array(screen_size.split(",")).astype(np.float),
                 "frame": line}
 
 

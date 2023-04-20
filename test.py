@@ -11,11 +11,11 @@ import os
 import copy
 import math
 
-def dis(p1, p2):
-    return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]))
+def dis(p1, p2, screen_size):
+    return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])*screen_size[0]**2 + (p1[1]-p2[1])*(p1[1]-p2[1])*screen_size[1]**2)
 
 if __name__ == "__main__":
-    config = yaml.load(open("config.yaml"))
+    config = yaml.full_load(open("config.yaml"))
     config = config["test"]
     path = config["data"]["path"]
     model_name = config["load"]["model_name"]
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                     data['rightEyeImg'] = data['rightEyeImg'].to(device)
                     data['rects'] = data['rects'].to(device)
                     labels = data["label"]
-                    
+                    screen_size= data["screen_size"]
                     gazes = net(data["leftEyeImg"], data["rightEyeImg"], data['faceImg'], data['rects'])
                     
                     names = data["frame"]
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                         #print(f'gaze: {gaze}')
                         gaze = gaze.cpu().detach()
                         count += 1
-                        acc = dis(gaze, labels[k])
+                        acc = dis(gaze, labels[k], screen_size[k])
                         total += acc
                         gaze = [str(u) for u in gaze.numpy()]
                         label = [str(u) for u in labels.numpy()[k]]
