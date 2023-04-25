@@ -38,6 +38,7 @@ if __name__ == "__main__":
     end = config["load"]["end_step"]
     step = config["load"]["steps"]
     epoch_log = open(os.path.join(load_path, f"{save_name}/epoch.log"), 'a')
+    total_avg = 0
     for save_iter in range(begin, end+step, step):
         print("Model building")
         net = model.model()
@@ -85,7 +86,16 @@ if __name__ == "__main__":
                         outfile.write(",".join(log) + "\n")
                 SE_log.close()
                 loger = f"[{save_iter}] Total Num: {count}, avg: {total/count} \n"
+                total_avg+= total/count
                 outfile.write(loger)
                 epoch_log.write(loger)
                 print(loger)
+    results_log = open(os.path.join(load_path, "leave_one_out.log"), 'a')
+
+    f = []
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        f.extend(dirnames)
+        break
+    total_avg_log = f"Fold {f[0]} Total Avg: {total_avg/(end-begin+1)} \n"
+    results_log.write(total_avg_log)
 

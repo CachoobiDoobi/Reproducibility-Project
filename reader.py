@@ -144,16 +144,23 @@ class loader(Dataset):
         # print(exlabel[4:])
         # what is exlabel
         # how to get rects?
-
-        return {"faceImg": torch.from_numpy(face_img).type(torch.FloatTensor),
-                "leftEyeImg": torch.from_numpy(leftEye_img).type(torch.FloatTensor),
-                "rightEyeImg": torch.from_numpy(rightEye_img).type(torch.FloatTensor),
-                "rects": torch.from_numpy(np.array(rects.split(",")).astype(np.float)).type(torch.FloatTensor),
-                "label": torch.from_numpy(np.array(label.split(",")).astype(np.float)).type(torch.FloatTensor),
-                "exlabel": torch.from_numpy(np.array(exlabel[4:]).astype(np.float)).type(torch.FloatTensor),
-                "screen_size": np.array(screen_size.split(",")).astype(np.float),
-                "frame": line}
-
+        if self.data_type == "test":
+            return {"faceImg": torch.from_numpy(face_img).type(torch.FloatTensor),
+                    "leftEyeImg": torch.from_numpy(leftEye_img).type(torch.FloatTensor),
+                    "rightEyeImg": torch.from_numpy(rightEye_img).type(torch.FloatTensor),
+                    "rects": torch.from_numpy(np.array(rects.split(",")).astype(np.float)).type(torch.FloatTensor),
+                    "label": torch.from_numpy(np.array(label.split(",")).astype(np.float)).type(torch.FloatTensor),
+                    "exlabel": torch.from_numpy(np.array(exlabel[4:]).astype(np.float)).type(torch.FloatTensor),
+                    "screen_size": np.array(screen_size.split(",")).astype(np.float),
+                    "frame": line}
+        else:
+            return {"faceImg": torch.from_numpy(face_img).type(torch.FloatTensor),
+                    "leftEyeImg": torch.from_numpy(leftEye_img).type(torch.FloatTensor),
+                    "rightEyeImg": torch.from_numpy(rightEye_img).type(torch.FloatTensor),
+                    "rects": torch.from_numpy(np.array(rects.split(",")).astype(np.float)).type(torch.FloatTensor),
+                    "label": torch.from_numpy(np.array(label.split(",")).astype(np.float)).type(torch.FloatTensor),
+                    "exlabel": torch.from_numpy(np.array(exlabel[4:]).astype(np.float)).type(torch.FloatTensor),
+                    "frame": line}
 
 def txtload(path, type, batch_size, shuffle=False, num_workers=0):
     dataset = loader(path, type)
