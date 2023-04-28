@@ -1,6 +1,7 @@
 # ReadMe
 
-Codes for ICPR2020 paper [Adaptive Feature Fusion Network for Gaze Tracking in Mobile Tablets](https://ieeexplore.ieee.org/abstract/document/9412205/).
+This is the code for the reproducibility project for the course CS4240 Deep Learning
+We implemented the pre-processing code from the [Adaptive Feature Fusion Network for Gaze Tracking in Mobile Tablets](https://ieeexplore.ieee.org/abstract/document/9412205/) paper, using the MPIIFaceGAze dataset.
 
 The project is based on:
 
@@ -11,4 +12,6 @@ torch==1.5.0
 torchvision==0.6.0
 ```
 
-As we conduct experiments on re-face-detected [GazeCapture](https://www.cv-foundation.org/openaccess/content_cvpr_2016/html/Krafka_Eye_Tracking_for_CVPR_2016_paper.html) dataset, the data-loader codes are not universal with original dataset. For details and codes about data processings, SOTA methods and benchmark, please refer to our survey paper ["Appearance-based Gaze Estimation With Deep Learning: A Review and Benchmark"](http://phi-ai.buaa.edu.cn/Gazehub/2D-dataset/).
+We have attempted to reproduce the results from the literature survey dataset ["Appearance-based Gaze Estimation With Deep Learning: A Review and Benchmark"](http://phi-ai.buaa.edu.cn/Gazehub/2D-dataset/).
+
+Do not forget to configure the yaml file
